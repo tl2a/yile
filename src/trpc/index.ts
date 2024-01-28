@@ -4,7 +4,6 @@ import { TRPCError } from '@trpc/server';
 import { db } from '@/db';
 import { z } from 'zod'
 import { INFINITE_QUERY_LIMIT } from '@/config/infinite-query';
-import { absoluteUrl } from '@/lib/utils';
 import { getUserSubscriptionPlan, stripe } from '@/lib/stripe';
 import { PLANS } from '@/config/stripe';
 
@@ -47,7 +46,7 @@ export const appRouter = router({
     async ({ ctx }) => {
       const { userId } = ctx
 
-      const billingUrl = absoluteUrl('/dashboard/billing')
+      const billingUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}/dashboard/billing` : `http://localhost:${process.env.PORT ?? 3000}/dashboard/billing`
 
       if (!userId)
         throw new TRPCError({ code: 'UNAUTHORIZED' })
@@ -81,7 +80,7 @@ export const appRouter = router({
         await stripe.checkout.sessions.create({
           success_url: billingUrl,
           cancel_url: billingUrl,
-          payment_method_types: ['card', 'paypal'],
+          payment_method_types: ['card'],
           mode: 'subscription',
           billing_address_collection: 'auto',
           line_items: [
